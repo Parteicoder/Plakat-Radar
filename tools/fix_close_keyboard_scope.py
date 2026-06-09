@@ -3,6 +3,7 @@ from pathlib import Path
 path = Path("app/src/main/java/de/bsw/plakatradar/MainActivity.kt")
 text = path.read_text(encoding="utf-8")
 
+# Fix: closeKeyboard was inserted into NearbyPostersScreen by the broad location-button patch.
 old = '''@Composable
 fun NearbyPostersScreen(vm: PlakatRadarViewModel) {
     val context = LocalContext.current
@@ -18,5 +19,82 @@ fun NearbyPostersScreen(vm: PlakatRadarViewModel) {
 if old in text and "fun NearbyPostersScreen(vm: PlakatRadarViewModel) {\n    val context = LocalContext.current\n    val focusManager = LocalFocusManager.current" not in text:
     text = text.replace(old, new)
 
+# Fix: the QR timer patch must also catch the real wording in MainActivity.kt.
+qr_variants = [
+    '''        if (AccessPolicy.canShowQr(s)) {
+            item {
+                Divider()
+                Text("Team-QR-Code. Nur du als Teamleiter stellst ihn bereit. Wer ihn scannt, ist direkt im Team. Der QR-Code ist 10 Minuten gültig.")
+                vm.inviteText()?.let { QrCodeImage(it) }
+            }
+            item { TeamMembersCard(s) }
+        }
+''',
+    '''        if (AccessPolicy.canShowQr(s)) {
+            item {
+                Divider()
+                Text("Team-QR-Code. Nur du als Teamleiter stellst ihn bereit. Wer ihn scannt, ist direkt im Team. Der QR-Code ist jeweils 10 Minuten gültig.")
+                vm.inviteText()?.let { QrCodeImage(it) }
+            }
+            item { TeamMembersCard(s) }
+        }
+'''
+]
+
+qr_new = '''        if (AccessPolicy.canShowQr(s)) {
+            item { TeamInviteQrCard(vm) }
+            item { TeamMembersCard(s) }
+        }
+'''
+
+for qr_old in qr_variants:
+    if qr_old in text:
+        text = text.replace(qr_old, qr_new)
+
+if "fun TeamInviteQrCard" not in text:
+    text = text.replace(
+        '''@Composable
+fun TeamMembersCard(s: LocalTeamState) {''',
+        '''@Composable
+fun TeamInviteQrCard(vm: PlakatRadarViewModel) {
+    var locked by remember { mutableStateOf(false) }
+    var refreshSeed by remember { mutableStateOf(0) }
+    var remaining by remember { mutableStateOf(TeamInvite.DEFAULT_TTL_SECONDS.toInt()) }
+
+    LaunchedEffect(locked, refreshSeed) {
+        remaining = TeamInvite.DEFAULT_TTL_SECONDS.toInt()
+        if (!locked) {
+            while (remaining > 0) {
+                kotlinx.coroutines.delay(1000)
+                remaining -= 1
+            }
+            refreshSeed += 1
+        }
+    }
+
+    val qrText = remember(locked, refreshSeed, vm.ui.local.teamId, vm.ui.local.teamSecret, vm.ui.local.deviceName) {
+        vm.inviteText(locked)
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Divider()
+        Text("Team-QR-Code. Nur du als Teamleiter stellst ihn bereit.")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(if (locked) "🔒 QR bleibt bestehen" else "🔓 Neuer QR in ${remaining}s")
+            Switch(checked = locked, onCheckedChange = { locked = it; refreshSeed += 1 })
+        }
+        Text(if (locked) "Schloss aktiv: Der QR-Code bleibt dauerhaft nutzbar." else "Ohne Schloss ist der QR-Code 1 Minute gültig und aktualisiert sich automatisch.")
+        qrText?.let { QrCodeImage(it) }
+    }
+}
+
+@Composable
+fun TeamMembersCard(s: LocalTeamState) {'''
+    )
+
 path.write_text(text, encoding="utf-8")
-print("closeKeyboard scope fix applied")
+print("scope and QR timer fixes applied")
