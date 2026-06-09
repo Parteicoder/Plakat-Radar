@@ -51,11 +51,46 @@ for qr_old in qr_variants:
     if qr_old in text:
         text = text.replace(qr_old, qr_new)
 
-if "fun TeamInviteQrCard" not in text:
-    text = text.replace(
-        '''@Composable
-fun TeamMembersCard(s: LocalTeamState) {''',
-        '''@Composable
+stable_qr_card = '''@Composable
+fun TeamInviteQrCard(vm: PlakatRadarViewModel) {
+    var locked by remember { mutableStateOf(false) }
+    var refreshSeed by remember { mutableStateOf(0) }
+    var remaining by remember { mutableStateOf(TeamInvite.DEFAULT_TTL_SECONDS.toInt()) }
+    var qrText by remember(vm.ui.local.teamId, vm.ui.local.teamSecret, vm.ui.local.deviceName) {
+        mutableStateOf(vm.inviteText())
+    }
+
+    LaunchedEffect(locked, refreshSeed, vm.ui.local.teamId, vm.ui.local.teamSecret, vm.ui.local.deviceName) {
+        if (!locked) {
+            qrText = vm.inviteText()
+            remaining = TeamInvite.DEFAULT_TTL_SECONDS.toInt()
+            while (remaining > 0 && !locked) {
+                kotlinx.coroutines.delay(1000)
+                remaining -= 1
+            }
+            if (!locked) refreshSeed += 1
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Divider()
+        Text("Team-QR-Code. Nur du als Teamleiter stellst ihn bereit.")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(if (locked) "🔒 Aktueller QR bleibt gleich" else "🔓 Neuer QR in ${remaining}s")
+            Switch(checked = locked, onCheckedChange = { locked = it })
+        }
+        Text(if (locked) "Schloss aktiv: Genau dieser sichtbare QR-Code bleibt stehen." else "Ohne Schloss wird die Anzeige nach 1 Minute automatisch erneuert.")
+        qrText?.let { QrCodeImage(it) }
+    }
+}
+
+'''
+
+old_qr_card = '''@Composable
 fun TeamInviteQrCard(vm: PlakatRadarViewModel) {
     var locked by remember { mutableStateOf(false) }
     var refreshSeed by remember { mutableStateOf(0) }
@@ -92,7 +127,15 @@ fun TeamInviteQrCard(vm: PlakatRadarViewModel) {
     }
 }
 
-@Composable
+'''
+
+if old_qr_card in text:
+    text = text.replace(old_qr_card, stable_qr_card)
+elif "fun TeamInviteQrCard" not in text:
+    text = text.replace(
+        '''@Composable
+fun TeamMembersCard(s: LocalTeamState) {''',
+        stable_qr_card + '''@Composable
 fun TeamMembersCard(s: LocalTeamState) {'''
     )
 
@@ -186,4 +229,14 @@ fun openUpdatePage(context: Context) {'''
     )
 
 path.write_text(text, encoding="utf-8")
-print("scope, QR timer, update and uninstall buttons applied")
+
+# The visible timer is now only for automatic display refresh. Locked QR codes must remain accepted.
+invite_path = Path("app/src/main/java/de/bsw/plakatradar/core/TeamInvite.kt")
+invite_text = invite_path.read_text(encoding="utf-8")
+invite_text = invite_text.replace(
+    ''').also { it.requireStillValid() }''',
+    ''')'''
+)
+invite_path.write_text(invite_text, encoding="utf-8")
+
+print("scope, QR timer, stable lock, update and uninstall buttons applied")
