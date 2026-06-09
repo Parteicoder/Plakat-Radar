@@ -1,4 +1,4 @@
-# Triggered by ChatGPT to build the latest debug APK with keyboard, list-removal, QR timer and auto-address fixes.
+# Triggered by ChatGPT to build the latest debug APK with keyboard, list-removal, QR timer, auto-address and screenshot-toggle fixes.
 name: Build Android APK
 
 on:
@@ -27,6 +27,10 @@ jobs:
           main_path = Path("app/src/main/java/de/bsw/plakatradar/MainActivity.kt")
           text = main_path.read_text(encoding="utf-8")
 
+          text = text.replace(
+              "        enableScreenshotProtection()\n        super.onCreate(savedInstanceState)",
+              "        // enableScreenshotProtection() // Vorläufig deaktiviert, Funktion bleibt erhalten.\n        super.onCreate(savedInstanceState)"
+          )
           text = text.replace(
               "import android.graphics.drawable.GradientDrawable\n",
               "import android.graphics.drawable.GradientDrawable\nimport android.location.Geocoder\n"
