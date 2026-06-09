@@ -61,5 +61,33 @@ new = old + '''
 if old in text and "Ohne Teamleiter-QR" not in text:
     text = text.replace(old, new)
 
+# Give important team/share buttons a grey locked look without disabling the click.
+grey = 'colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurfaceVariant)'
+lines = []
+for line in text.splitlines():
+    stripped = line.strip()
+    indent = line[:len(line) - len(line.lstrip())]
+    if stripped.startswith('Button(onClick = vm::startOrStopSync'):
+        lines.append(indent + 'if (AccessPolicy.hasTeamAccess(s)) {')
+        lines.append(indent + '    ' + stripped)
+        lines.append(indent + '} else {')
+        lines.append(indent + '    Button(onClick = vm::requireTeamQr, modifier = Modifier.fillMaxWidth().height(60.dp), ' + grey + ') { Text("Lokalen Sync starten") }')
+        lines.append(indent + '}')
+    elif 'vm.shareSyncBundle(context)' in line and 'Button(onClick' in line:
+        lines.append(indent + 'if (AccessPolicy.hasTeamAccess(s)) {')
+        lines.append(indent + '    ' + stripped)
+        lines.append(indent + '} else {')
+        lines.append(indent + '    Button(onClick = vm::requireTeamQr, modifier = Modifier.fillMaxWidth().height(60.dp), ' + grey + ') { Text("Sync-Paket teilen") }')
+        lines.append(indent + '}')
+    elif 'syncImportLauncher.launch' in line and 'Button(onClick' in line:
+        lines.append(indent + 'if (AccessPolicy.hasTeamAccess(s)) {')
+        lines.append(indent + '    ' + stripped)
+        lines.append(indent + '} else {')
+        lines.append(indent + '    Button(onClick = vm::requireTeamQr, modifier = Modifier.fillMaxWidth().height(60.dp), ' + grey + ') { Text("Sync-Paket importieren") }')
+        lines.append(indent + '}')
+    else:
+        lines.append(line)
+text = "\n".join(lines) + "\n"
+
 path.write_text(text, encoding="utf-8")
-print("no QR notice and locked-action hints applied")
+print("no QR notice and grey team buttons applied")
