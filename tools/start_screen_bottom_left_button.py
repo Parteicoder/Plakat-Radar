@@ -3,6 +3,13 @@ from pathlib import Path
 path = Path("app/src/main/java/de/bsw/plakatradar/MainActivity.kt")
 text = path.read_text(encoding="utf-8")
 
+# Ensure imports for keyboard-safe scrolling on the start screen.
+if "import androidx.compose.foundation.rememberScrollState" not in text:
+    text = text.replace(
+        "import androidx.compose.foundation.Image\n",
+        "import androidx.compose.foundation.Image\nimport androidx.compose.foundation.rememberScrollState\nimport androidx.compose.foundation.verticalScroll\n"
+    )
+
 start_marker = "@Composable\nfun StartScreen(vm: PlakatRadarViewModel)"
 dash_marker = "@Composable\nfun DashboardScreen(vm: PlakatRadarViewModel)"
 
@@ -28,7 +35,12 @@ fun StartScreen(vm: PlakatRadarViewModel) {
 
     Box(Modifier.fillMaxSize()) {
         Column(
-            Modifier.fillMaxSize().padding(24.dp),
+            Modifier
+                .fillMaxSize()
+                .imePadding()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp)
+                .padding(bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -80,4 +92,4 @@ if "fun openAppSettings(context: Context)" not in text:
         text = text.replace("fun openNavigation(context: Context, latitude: Double, longitude: Double, label: String) {", helper + "fun openNavigation(context: Context, latitude: Double, longitude: Double, label: String) {", 1)
 
 path.write_text(text, encoding="utf-8")
-print("robust start screen bottom-left button applied")
+print("keyboard-safe start screen bottom-left button applied")
