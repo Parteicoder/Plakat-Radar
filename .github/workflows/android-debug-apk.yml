@@ -24,6 +24,9 @@ jobs:
       - name: Apply scope patch
         run: python3 tools/fix_close_keyboard_scope.py
 
+      - name: Apply persistent QR lock
+        run: python3 tools/persist_qr_lock.py
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
