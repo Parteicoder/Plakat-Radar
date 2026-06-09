@@ -18,6 +18,46 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Apply keyboard close fix
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("app/src/main/java/de/bsw/plakatradar/MainActivity.kt")
+          text = path.read_text(encoding="utf-8")
+
+          text = text.replace(
+              "import androidx.compose.foundation.Image\n",
+              "import androidx.compose.foundation.Image\nimport androidx.compose.foundation.text.KeyboardActions\nimport androidx.compose.foundation.text.KeyboardOptions\n"
+          )
+          text = text.replace(
+              "import androidx.compose.ui.platform.LocalContext\n",
+              "import androidx.compose.ui.platform.LocalContext\nimport androidx.compose.ui.platform.LocalFocusManager\nimport androidx.compose.ui.text.input.ImeAction\n"
+          )
+          text = text.replace(
+              '    var myName by remember { mutableStateOf("") }\n    val scanner = rememberLauncherForActivityResult',
+              '    var myName by remember { mutableStateOf("") }\n    val focusManager = LocalFocusManager.current\n    fun closeKeyboard() { focusManager.clearFocus(force = true) }\n    val scanner = rememberLauncherForActivityResult'
+          )
+          text = text.replace(
+              '                OutlinedTextField(teamName, { teamName = it }, label = { Text("Teamname") }, modifier = Modifier.fillMaxWidth())',
+              '                OutlinedTextField(\n                    value = teamName,\n                    onValueChange = { teamName = it },\n                    label = { Text("Teamname") },\n                    modifier = Modifier.fillMaxWidth(),\n                    singleLine = true,\n                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),\n                    keyboardActions = KeyboardActions(onDone = { closeKeyboard() })\n                )'
+          )
+          text = text.replace(
+              '                OutlinedTextField(myName, { myName = it }, label = { Text("Dein Name") }, modifier = Modifier.fillMaxWidth())',
+              '                OutlinedTextField(\n                    value = myName,\n                    onValueChange = { myName = it },\n                    label = { Text("Dein Name") },\n                    modifier = Modifier.fillMaxWidth(),\n                    singleLine = true,\n                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),\n                    keyboardActions = KeyboardActions(onDone = { closeKeyboard() })\n                )'
+          )
+          text = text.replace(
+              '                Button(onClick = { vm.createLeaderTeam(teamName, myName.ifBlank { "Teamleiter" }) }, modifier = Modifier.fillMaxWidth().height(64.dp)) { Text("Team erstellen") }',
+              '                Button(onClick = { closeKeyboard(); vm.createLeaderTeam(teamName, myName.ifBlank { "Teamleiter" }) }, modifier = Modifier.fillMaxWidth().height(64.dp)) { Text("Team erstellen") }'
+          )
+          text = text.replace(
+              '                Button(onClick = { scanner.launch(ScanOptions().setPrompt("QR-Code vom Teamleiter scannen").setBeepEnabled(false)) }, modifier = Modifier.fillMaxWidth().height(64.dp)) { Text("QR-Code scannen") }',
+              '                Button(onClick = { closeKeyboard(); scanner.launch(ScanOptions().setPrompt("QR-Code vom Teamleiter scannen").setBeepEnabled(false)) }, modifier = Modifier.fillMaxWidth().height(64.dp)) { Text("QR-Code scannen") }'
+          )
+
+          path.write_text(text, encoding="utf-8")
+          PY
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
