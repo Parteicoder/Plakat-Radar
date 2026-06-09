@@ -47,7 +47,7 @@ fun StartScreen(vm: PlakatRadarViewModel) {
             Text("PlakatRadar", style = MaterialTheme.typography.headlineLarge)
             Text("Bitte auswählen. Es gibt nur zwei Wege:")
             Button(onClick = { mode = "leader" }, modifier = Modifier.fillMaxWidth().height(72.dp)) { Text("Ich bin Teamleiter") }
-            Button(onClick = { closeKeyboard(); scanner.launch(ScanOptions().setPrompt("QR-Code vom Teamleiter scannen").setBeepEnabled(false)) }, modifier = Modifier.fillMaxWidth().height(72.dp)) { Text("Ich bin Teammitglied") }
+            Button(onClick = { mode = "member" }, modifier = Modifier.fillMaxWidth().height(72.dp)) { Text("Ich bin Teammitglied") }
             Divider()
             when (mode) {
                 "leader" -> {
@@ -55,6 +55,11 @@ fun StartScreen(vm: PlakatRadarViewModel) {
                     OutlinedTextField(teamName, { teamName = it }, label = { Text("Teamname") }, modifier = Modifier.fillMaxWidth())
                     OutlinedTextField(myName, { myName = it }, label = { Text("Dein Name") }, modifier = Modifier.fillMaxWidth())
                     Button(onClick = { closeKeyboard(); vm.createLeaderTeam(teamName, myName.ifBlank { "Teamleiter" }) }, modifier = Modifier.fillMaxWidth().height(64.dp)) { Text("Team erstellen") }
+                }
+                "member" -> {
+                    Text("Bitte zuerst deinen Namen eintragen. Danach öffnet sich die Kamera zum Scannen des Team-QR-Codes.")
+                    OutlinedTextField(myName, { myName = it }, label = { Text("Dein Name") }, modifier = Modifier.fillMaxWidth())
+                    Button(onClick = { closeKeyboard(); scanner.launch(ScanOptions().setPrompt("QR-Code vom Teamleiter scannen").setBeepEnabled(false)) }, modifier = Modifier.fillMaxWidth().height(64.dp)) { Text("QR-Code scannen") }
                 }
             }
         }
@@ -87,4 +92,4 @@ if "fun openAppSettings(context: Context)" not in text:
         text = text.replace("fun openNavigation(context: Context, latitude: Double, longitude: Double, label: String) {", helper + "fun openNavigation(context: Context, latitude: Double, longitude: Double, label: String) {", 1)
 
 path.write_text(text, encoding="utf-8")
-print("start screen member button launches QR scanner immediately")
+print("start screen keeps member name before QR scanner")
