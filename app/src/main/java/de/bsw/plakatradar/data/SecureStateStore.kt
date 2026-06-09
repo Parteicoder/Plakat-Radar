@@ -1,12 +1,10 @@
 package de.bsw.plakatradar.data
 
 import android.content.Context
-import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import java.io.File
 import java.security.KeyStore
-import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -46,18 +44,25 @@ class SecureStateStore(context: Context) {
 
     private fun encrypt(plain: ByteArray): ByteArray {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        val iv = ByteArray(12)
-        SecureRandom().nextBytes(iv)
-        cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey(), GCMParameterSpec(128, iv))
+
+        // Bei Android Keystore + setRandomizedEncryptionRequired(true) darf beim
+        // Verschlüsseln keine eigene IV übergeben werden. Android erzeugt sie selbst.
+        cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey())
+
         val encrypted = cipher.doFinal(plain)
+        val iv = cipher.iv ?: error("Android Keystore hat keine IV erzeugt.")
+        require(iv.size == 12) { "Unerwartete IV-Länge: ${iv.size}" }
+
         return iv + encrypted
     }
 
     private fun decrypt(data: ByteArray): ByteArray {
         require(data.size > 12) { "Lokale Datendatei ist beschädigt." }
+
         val iv = data.copyOfRange(0, 12)
         val encrypted = data.copyOfRange(12, data.size)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+
         cipher.init(Cipher.DECRYPT_MODE, getOrCreateKey(), GCMParameterSpec(128, iv))
         return cipher.doFinal(encrypted)
     }
