@@ -1,4 +1,4 @@
-# Triggered by ChatGPT to build the latest debug APK with keyboard, list-removal and QR timer fixes.
+# Triggered by ChatGPT to build the latest debug APK with keyboard, list-removal, QR timer and auto-address fixes.
 name: Build Android APK
 
 on:
@@ -27,6 +27,10 @@ jobs:
           main_path = Path("app/src/main/java/de/bsw/plakatradar/MainActivity.kt")
           text = main_path.read_text(encoding="utf-8")
 
+          text = text.replace(
+              "import android.graphics.drawable.GradientDrawable\n",
+              "import android.graphics.drawable.GradientDrawable\nimport android.location.Geocoder\n"
+          )
           text = text.replace(
               "import androidx.compose.foundation.Image\n",
               "import androidx.compose.foundation.Image\nimport androidx.compose.foundation.text.KeyboardActions\nimport androidx.compose.foundation.text.KeyboardOptions\n"
@@ -90,11 +94,11 @@ jobs:
 
           text = text.replace(
               '    val context = LocalContext.current\n    var address by remember { mutableStateOf("") }',
-              '    val context = LocalContext.current\n    val focusManager = LocalFocusManager.current\n    fun closeKeyboard() { focusManager.clearFocus(force = true) }\n    var address by remember { mutableStateOf("") }'
+              '    val context = LocalContext.current\n    val focusManager = LocalFocusManager.current\n    fun closeKeyboard() { focusManager.clearFocus(force = true) }'
           )
           text = text.replace(
               '        OutlinedTextField(address, { address = it }, label = { Text("Standort / Straße") }, modifier = Modifier.fillMaxWidth())',
-              '        OutlinedTextField(\n            value = address,\n            onValueChange = { address = it },\n            label = { Text("Standort / Straße") },\n            modifier = Modifier.fillMaxWidth(),\n            singleLine = true,\n            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),\n            keyboardActions = KeyboardActions(onDone = { closeKeyboard() })\n        )'
+              '        Text("Standort wird automatisch per GPS ermittelt und als Straße gespeichert.")'
           )
           text = text.replace(
               '        OutlinedTextField(note, { note = it }, label = { Text("Bemerkung für Stadtverwaltung") }, modifier = Modifier.fillMaxWidth())',
@@ -111,6 +115,10 @@ jobs:
           text = text.replace(
               '        Button(onClick = {\n            val fused = LocationServices.getFusedLocationProviderClient(context)',
               '        Button(onClick = {\n            closeKeyboard()\n            val fused = LocationServices.getFusedLocationProviderClient(context)'
+          )
+          text = text.replace(
+              '                        vm.addPoster(loc.latitude, loc.longitude, address, type, note, internal, removalDaysText.toLongOrNull() ?: 14L)',
+              '                        val detectedAddress = reverseGeocodeAddress(context, loc.latitude, loc.longitude)\n                        vm.addPoster(loc.latitude, loc.longitude, detectedAddress, type, note, internal, removalDaysText.toLongOrNull() ?: 14L)'
           )
 
           text = text.replace(
@@ -201,8 +209,56 @@ fun TeamInviteQrCard(vm: PlakatRadarViewModel) {
 @Composable
 fun TeamMembersCard(s: LocalTeamState) {'''
           )
+          text = text.replace(
+              '''fun statusText(status: PosterStatus): String = when (status) {
+    PosterStatus.HANGING -> "hängt"
+    PosterStatus.CHECKED -> "kontrolliert"
+    PosterStatus.DAMAGED -> "beschädigt"
+    PosterStatus.MISSING -> "fehlt"
+    PosterStatus.REPLACED -> "ersetzt"
+    PosterStatus.REMOVED -> "entfernt"
+}
+
+fun openNavigation(context: Context, latitude: Double, longitude: Double, label: String) {''',
+              '''fun statusText(status: PosterStatus): String = when (status) {
+    PosterStatus.HANGING -> "hängt"
+    PosterStatus.CHECKED -> "kontrolliert"
+    PosterStatus.DAMAGED -> "beschädigt"
+    PosterStatus.MISSING -> "fehlt"
+    PosterStatus.REPLACED -> "ersetzt"
+    PosterStatus.REMOVED -> "entfernt"
+}
+
+fun reverseGeocodeAddress(context: Context, latitude: Double, longitude: Double): String {
+    val fallback = "GPS: %.6f, %.6f".format(Locale.US, latitude, longitude)
+    return runCatching {
+        @Suppress("DEPRECATION")
+        val found = Geocoder(context, Locale.GERMANY).getFromLocation(latitude, longitude, 1)
+        val address = found?.firstOrNull()
+        val street = address?.thoroughfare?.takeIf { it.isNotBlank() }?.let { streetName ->
+            val number = address.subThoroughfare?.takeIf { it.isNotBlank() }
+            if (number != null) "$streetName $number" else streetName
+        }
+        val city = address?.locality?.takeIf { it.isNotBlank() }
+            ?: address?.subAdminArea?.takeIf { it.isNotBlank() }
+        listOfNotNull(street, address?.postalCode?.takeIf { it.isNotBlank() }, city)
+            .joinToString(", ")
+            .ifBlank { address?.getAddressLine(0).orEmpty() }
+    }.getOrNull()?.takeIf { it.isNotBlank() } ?: fallback
+}
+
+fun openNavigation(context: Context, latitude: Double, longitude: Double, label: String) {'''
+          )
 
           main_path.write_text(text, encoding="utf-8")
+
+          export_path = Path("app/src/main/java/de/bsw/plakatradar/core/OfficialExport.kt")
+          export_text = export_path.read_text(encoding="utf-8")
+          export_text = export_text.replace(
+              'poster.addressHint, poster.latitude.toString(), poster.longitude.toString(),',
+              'poster.addressHint.ifBlank { "GPS: ${poster.latitude}, ${poster.longitude}" }, poster.latitude.toString(), poster.longitude.toString(),'
+          )
+          export_path.write_text(export_text, encoding="utf-8")
 
           repo_path = Path("app/src/main/java/de/bsw/plakatradar/data/LocalRepository.kt")
           repo_text = repo_path.read_text(encoding="utf-8")
