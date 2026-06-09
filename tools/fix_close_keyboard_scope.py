@@ -139,61 +139,27 @@ fun TeamMembersCard(s: LocalTeamState) {''',
 fun TeamMembersCard(s: LocalTeamState) {'''
     )
 
-# Add floating update and uninstall/settings buttons to the dashboard.
-if "openUpdatePage(context)" not in text:
-    text = text.replace(
-        '''    Column(Modifier.fillMaxSize()) {
-        TabRow(selectedTabIndex = tabs.indexOf(tab).coerceAtLeast(0)) {''',
-        '''    Box(Modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize()) {
-            TabRow(selectedTabIndex = tabs.indexOf(tab).coerceAtLeast(0)) {'''
-    )
-    text = text.replace(
-        '''        when (tab) {
-            "home" -> HomeScreen(vm)
-            "add" -> AddPosterScreen(vm)
-            "map" -> PosterMapScreen(vm.ui.local.posters)
-            "near" -> NearbyPostersScreen(vm)
-            "list" -> PosterListScreen(vm)
-        }
-    }
-}''',
-        '''            when (tab) {
-                "home" -> HomeScreen(vm)
-                "add" -> AddPosterScreen(vm)
-                "map" -> PosterMapScreen(vm.ui.local.posters)
-                "near" -> NearbyPostersScreen(vm)
-                "list" -> PosterListScreen(vm)
+# Put app management buttons under the city administration export button.
+export_block = '''        if (AccessPolicy.canExportForAuthority(s)) {
+            item {
+                Button(onClick = { vm.exportCsv(context, "Eilenburg") }, modifier = Modifier.fillMaxWidth().height(60.dp)) { Text("Liste für Stadtverwaltung teilen") }
             }
         }
-        FloatingActionButton(
-            onClick = { openAppSettings(context) },
-            modifier = Modifier.align(Alignment.BottomStart).padding(16.dp)
-        ) { Text("Deinstallieren") }
-        FloatingActionButton(
-            onClick = { openUpdatePage(context) },
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
-        ) { Text("Update") }
-    }
-}'''
-    )
+'''
 
-# If the update button is already present but the uninstall button is missing, add it next to it.
-if "openUpdatePage(context)" in text and "openAppSettings(context)" not in text:
-    text = text.replace(
-        '''        FloatingActionButton(
-            onClick = { openUpdatePage(context) },
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
-        ) { Text("Update") }''',
-        '''        FloatingActionButton(
-            onClick = { openAppSettings(context) },
-            modifier = Modifier.align(Alignment.BottomStart).padding(16.dp)
-        ) { Text("Deinstallieren") }
-        FloatingActionButton(
-            onClick = { openUpdatePage(context) },
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
-        ) { Text("Update") }'''
-    )
+management_block = export_block + '''
+        item {
+            Divider()
+            Text("App verwalten")
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = { openAppSettings(context) }, modifier = Modifier.weight(1f).height(60.dp)) { Text("Deinstallieren") }
+                Button(onClick = { openUpdatePage(context) }, modifier = Modifier.weight(1f).height(60.dp)) { Text("Update") }
+            }
+        }
+'''
+
+if 'Text("App verwalten")' not in text and export_block in text:
+    text = text.replace(export_block, management_block)
 
 # Add helper that opens the GitHub APK workflow page in the browser.
 if "fun openUpdatePage(context: Context)" not in text:
@@ -239,4 +205,4 @@ invite_text = invite_text.replace(
 )
 invite_path.write_text(invite_text, encoding="utf-8")
 
-print("scope, QR timer, stable lock, update and uninstall buttons applied")
+print("scope, QR timer, stable lock and management buttons applied")
