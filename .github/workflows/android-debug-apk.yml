@@ -1,4 +1,4 @@
-# Triggered by ChatGPT to build the latest debug APK with keyboard fixes.
+# Triggered by ChatGPT to build the latest debug APK with keyboard and list-removal fixes.
 name: Build Android APK
 
 on:
@@ -19,13 +19,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Apply keyboard close fix
+      - name: Apply app fixes
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
-          path = Path("app/src/main/java/de/bsw/plakatradar/MainActivity.kt")
-          text = path.read_text(encoding="utf-8")
+          main_path = Path("app/src/main/java/de/bsw/plakatradar/MainActivity.kt")
+          text = main_path.read_text(encoding="utf-8")
 
           text = text.replace(
               "import androidx.compose.foundation.Image\n",
@@ -81,7 +81,57 @@ jobs:
               '        Button(onClick = {\n            closeKeyboard()\n            val fused = LocationServices.getFusedLocationProviderClient(context)'
           )
 
-          path.write_text(text, encoding="utf-8")
+          text = text.replace(
+              '''    fun updateStatus(poster: Poster, status: PosterStatus) {
+        val updated = repo.updateStatus(ui.local, poster, status)
+        ui = ui.copy(local = updated, lastLog = "Status geändert.")
+        sync?.sendCurrentBundleToAll()
+    }
+''',
+              '''    fun updateStatus(poster: Poster, status: PosterStatus) {
+        val updated = repo.updateStatus(ui.local, poster, status)
+        ui = ui.copy(local = updated, lastLog = "Status geändert.")
+        sync?.sendCurrentBundleToAll()
+    }
+
+    fun deletePoster(poster: Poster) {
+        val updated = repo.deletePoster(ui.local, poster)
+        ui = ui.copy(local = updated, lastLog = "Plakat aus der Liste entfernt.")
+        sync?.sendCurrentBundleToAll()
+    }
+'''
+          )
+          text = text.replace(
+              '''                        Button({ vm.updateStatus(p, PosterStatus.REMOVED) }) { Text("Entfernt") }
+                    }
+                    Button({ openNavigation(context, p.latitude, p.longitude, p.addressHint.ifBlank { "Plakat" }) }) {''',
+              '''                        Button({ vm.updateStatus(p, PosterStatus.REMOVED) }) { Text("Entfernt") }
+                    }
+                    Button({ vm.deletePoster(p) }, modifier = Modifier.fillMaxWidth()) { Text("Aus Liste entfernen") }
+                    Button({ openNavigation(context, p.latitude, p.longitude, p.addressHint.ifBlank { "Plakat" }) }) {'''
+          )
+
+          main_path.write_text(text, encoding="utf-8")
+
+          repo_path = Path("app/src/main/java/de/bsw/plakatradar/data/LocalRepository.kt")
+          repo_text = repo_path.read_text(encoding="utf-8")
+          repo_text = repo_text.replace(
+              '    fun mergeAndSave(local: LocalTeamState, snapshot: SyncSnapshot): LocalTeamState = SyncMerge.merge(local, snapshot).also(::save)',
+              '''    fun deletePoster(state: LocalTeamState, poster: Poster): LocalTeamState {
+        val updated = state.posters.filterNot { it.id == poster.id }
+        val event = PosterEvent(
+            posterId = poster.id,
+            teamId = poster.teamId,
+            actorDeviceId = state.deviceId,
+            actorName = state.deviceName,
+            action = "Plakat aus der Liste entfernt"
+        )
+        return state.copy(posters = updated, events = listOf(event) + state.events).also(::save)
+    }
+
+    fun mergeAndSave(local: LocalTeamState, snapshot: SyncSnapshot): LocalTeamState = SyncMerge.merge(local, snapshot).also(::save)'''
+          )
+          repo_path.write_text(repo_text, encoding="utf-8")
           PY
 
       - name: Set up JDK 17
