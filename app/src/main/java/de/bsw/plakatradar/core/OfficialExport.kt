@@ -1,14 +1,50 @@
 package de.bsw.plakatradar.core
 
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 object OfficialExport {
     private val date = SimpleDateFormat("dd.MM.yyyy", Locale.GERMANY)
 
-    fun toCsv(state: LocalTeamState, municipality: String): String {
-        val header = listOf(
+    fun toCsv(state: LocalTeamState, municipality: String): String =
+        buildCsv(state = state, municipality = municipality, photoPathFor = null)
+
+    fun writeZip(state: LocalTeamState, municipality: String, photosDir: File, outputFile: File): File {
+        ZipOutputStream(outputFile.outputStream().buffered()).use { zip ->
+            val csv = buildCsv(
+                state = state,
+                municipality = municipality,
+                photoPathFor = { index, poster -> photoEntryName(index, poster, photosDir) ?: "Kein Foto" }
+            )
+
+            zip.putNextEntry(ZipEntry("plakatliste.csv"))
+            zip.write(csv.toByteArray(Charsets.UTF_8))
+            zip.closeEntry()
+
+            state.posters.forEachIndexed { index, poster ->
+                val originalName = poster.localPhotoFileName ?: return@forEachIndexed
+                val source = File(photosDir, originalName)
+                val entryName = photoEntryName(index, poster, photosDir) ?: return@forEachIndexed
+                if (!source.isFile) return@forEachIndexed
+
+                zip.putNextEntry(ZipEntry(entryName))
+                source.inputStream().use { input -> input.copyTo(zip) }
+                zip.closeEntry()
+            }
+        }
+        return outputFile
+    }
+
+    private fun buildCsv(
+        state: LocalTeamState,
+        municipality: String,
+        photoPathFor: ((Int, Poster) -> String?)?
+    ): String {
+        val header = mutableListOf(
             "Nr.",
             "Kommune",
             "Standortbeschreibung",
@@ -20,11 +56,12 @@ object OfficialExport {
             "GPS-Breitengrad",
             "GPS-Längengrad",
             "Google-Maps-Link"
-        ).joinToString(";")
+        )
+        if (photoPathFor != null) header += "Foto-Datei"
 
         val rows = state.posters.mapIndexed { index, poster ->
             val mapsLink = "https://www.google.com/maps/search/?api=1&query=${poster.latitude},${poster.longitude}"
-            listOf(
+            val columns = mutableListOf(
                 (index + 1).toString(),
                 municipality,
                 poster.addressHint.ifBlank { "Keine Standortbeschreibung eingetragen" },
@@ -36,11 +73,23 @@ object OfficialExport {
                 poster.latitude.toString(),
                 poster.longitude.toString(),
                 mapsLink
-            ).joinToString(";") { it.csv() }
+            )
+            if (photoPathFor != null) columns += (photoPathFor(index, poster) ?: "Kein Foto")
+            columns.joinToString(";") { it.csv() }
         }
 
         // UTF-8 BOM helps older Excel versions open German umlauts correctly.
-        return "\uFEFF" + (listOf(header) + rows).joinToString("\n")
+        return "\uFEFF" + (listOf(header.joinToString(";")) + rows).joinToString("\n")
+    }
+
+    private fun photoEntryName(index: Int, poster: Poster, photosDir: File): String? {
+        val originalName = poster.localPhotoFileName ?: return null
+        val source = File(photosDir, originalName)
+        if (!source.isFile) return null
+        val rawExtension = source.extension.lowercase(Locale.ROOT)
+        val extension = rawExtension.takeIf { it.matches(Regex("[a-z0-9]{1,8}")) } ?: "jpg"
+        val number = (index + 1).toString().padStart(3, '0')
+        return "fotos/plakat_${number}.${extension}"
     }
 
     private fun PosterType.toHumanText(): String = when (this) {
