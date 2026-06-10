@@ -81,6 +81,45 @@ class LocalRepository(private val context: Context) {
         ).also(::save)
     }
 
+    fun rotateTeamSecret(state: LocalTeamState): LocalTeamState {
+        require(AccessPolicy.isLeader(state)) { "Nur der Teamleiter kann den Team-Schlüssel erneuern." }
+        require(AccessPolicy.isSelfApproved(state)) { "Dieses Gerät ist nicht für Team-Sicherheitsaktionen freigegeben." }
+        val teamId = state.teamId ?: error("Kein Team aktiv.")
+        val newSecret = UUID.randomUUID().toString() + UUID.randomUUID().toString()
+        val event = PosterEvent(
+            teamId = teamId,
+            posterId = "TEAM",
+            actorDeviceId = state.deviceId,
+            actorName = state.deviceName,
+            action = "Team-Schlüssel erneuert. Teammitglieder müssen einen neuen Teamleiter-QR scannen."
+        )
+        return state.copy(
+            teamSecret = newSecret,
+            events = listOf(event) + state.events
+        ).also(::save)
+    }
+
+    fun setDeviceBlocked(state: LocalTeamState, deviceId: String, blocked: Boolean): LocalTeamState {
+        require(AccessPolicy.isLeader(state)) { "Nur der Teamleiter kann Geräte sperren oder entsperren." }
+        require(deviceId != state.deviceId) { "Das eigene Teamleiter-Gerät kann nicht gesperrt werden." }
+        val teamId = state.teamId ?: error("Kein Team aktiv.")
+        val updatedDevices = state.devices.map {
+            if (it.deviceId == deviceId) it.copy(blocked = blocked, approved = it.approved && !blocked) else it
+        }
+        val target = state.devices.firstOrNull { it.deviceId == deviceId }?.displayName ?: deviceId.take(8)
+        val event = PosterEvent(
+            teamId = teamId,
+            posterId = "TEAM",
+            actorDeviceId = state.deviceId,
+            actorName = state.deviceName,
+            action = if (blocked) "Gerät gesperrt: $target" else "Gerät entsperrt: $target"
+        )
+        return state.copy(
+            devices = updatedDevices,
+            events = listOf(event) + state.events
+        ).also(::save)
+    }
+
     fun addPoster(state: LocalTeamState, poster: Poster): LocalTeamState {
         val event = PosterEvent(posterId = poster.id, teamId = poster.teamId, actorDeviceId = state.deviceId, actorName = state.deviceName, action = "Plakat erfasst")
         return state.copy(posters = listOf(poster) + state.posters, events = listOf(event) + state.events).also(::save)
