@@ -53,11 +53,11 @@ class NearbySyncManager(
         val discoveryOptions = DiscoveryOptions.Builder().setStrategy(STRATEGY).build()
 
         client.startAdvertising(endpointName, SERVICE_ID, lifecycleCallback, options)
-            .addOnSuccessListener { onLog("Lokaler Sync: Dieses Handy ist sichtbar.") }
+            .addOnSuccessListener { onLog("Lokaler Sync aktiv: Dieses Handy ist sichtbar.") }
             .addOnFailureListener { onLog("Sichtbarkeit fehlgeschlagen: ${it.message}") }
 
         client.startDiscovery(SERVICE_ID, discoveryCallback, discoveryOptions)
-            .addOnSuccessListener { onLog("Lokaler Sync: Suche nach Teamgeräten läuft.") }
+            .addOnSuccessListener { onLog("Lokaler Sync aktiv: Suche nach Teamgeräten läuft.") }
             .addOnFailureListener { onLog("Suche fehlgeschlagen: ${it.message}") }
     }
 
@@ -84,7 +84,7 @@ class NearbySyncManager(
     private fun sendBundle(endpointId: String, file: File) {
         val payload = Payload.fromFile(file)
         client.sendPayload(endpointId, payload)
-            .addOnSuccessListener { onLog("Sync-Paket gesendet.") }
+            .addOnSuccessListener { onLog("Sync-Daten an Teamgerät gesendet.") }
             .addOnFailureListener { onLog("Senden fehlgeschlagen: ${it.message}") }
     }
 
@@ -146,7 +146,7 @@ class NearbySyncManager(
         if (constantTimeEqualsHex(msg.optString("proof"), expected) && msg.optString("nonce") == nonce) {
             authorizedEndpoints.add(endpointId)
             sendAuthOk(endpointId)
-            onLog("Teamgerät geprüft.")
+            onLog("Teamgerät geprüft. Sync kann laufen.")
             sendBundleIfReady(endpointId)
         } else {
             client.disconnectFromEndpoint(endpointId)
@@ -252,7 +252,7 @@ class NearbySyncManager(
                         return
                     }
                     incomingFiles[payload.id] = payload
-                    onLog("Sync-Datei wird empfangen…")
+                    onLog("Sync-Daten werden empfangen…")
                 }
                 else -> Unit
             }
@@ -264,7 +264,7 @@ class NearbySyncManager(
                 val uri: Uri = payload.asFile()?.asUri() ?: return
                 val bundle = bundleCodec.copyIncomingUriToBundle(uri)
                 onIncomingBundle(bundle)
-                onLog("Sync-Paket empfangen und verarbeitet.")
+                onLog("Sync erfolgreich: Daten empfangen und abgeglichen.")
             } else if (update.status == PayloadTransferUpdate.Status.FAILURE) {
                 incomingFiles.remove(update.payloadId)
                 onLog("Sync-Übertragung fehlgeschlagen.")
