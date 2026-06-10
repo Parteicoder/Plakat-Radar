@@ -12,8 +12,8 @@ android {
         applicationId = "de.bsw.plakatradar"
         minSdk = 26
         targetSdk = 35
-        versionCode = 20
-        versionName = "0.10.10-sync-permission-feedback"
+        versionCode = 21
+        versionName = "0.10.11-authority-export-for-members"
     }
 
     buildFeatures {
