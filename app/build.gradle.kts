@@ -12,8 +12,8 @@ android {
         applicationId = "de.bsw.plakatradar"
         minSdk = 26
         targetSdk = 35
-        versionCode = 12
-        versionName = "0.10.2-keyboard-callback-fix"
+        versionCode = 13
+        versionName = "0.10.3-kofi-support"
     }
 
     buildFeatures {
@@ -26,9 +26,46 @@ kotlin { jvmToolchain(17) }
 tasks.register("normalizeKeyboardCallbacks") {
     doLast {
         val mainActivity = file("src/main/java/de/bsw/plakatradar/MainActivity.kt")
-        val oldText = "fun close" + "Keyboard() { focusManager.clearFocus(force = true) }"
-        val newText = "val close" + "Keyboard: () -> Unit = { focusManager.clearFocus(force = true) }"
-        mainActivity.writeText(mainActivity.readText().replace(oldText, newText))
+        val oldKeyboard = "fun close" + "Keyboard() { focusManager.clearFocus(force = true) }"
+        val newKeyboard = "val close" + "Keyboard: () -> Unit = { focusManager.clearFocus(force = true) }"
+        val oldAppManagement = "@Composable\nfun AppManagementCard(context: Context) { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { Divider(); Text(\"App verwalten\"); Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { Button(onClick = { openAppSettings(context) }, modifier = Modifier.weight(1f).height(60.dp)) { Text(\"Deinstallieren\") }; Button(onClick = { openUpdatePage(context) }, modifier = Modifier.weight(1f).height(60.dp)) { Text(\"Update\") } } } }"
+        val newAppManagement = """@Composable
+fun AppManagementCard(context: Context) {
+    var showSupportInfo by remember { mutableStateOf(false) }
+
+    if (showSupportInfo) {
+        AlertDialog(
+            onDismissRequest = { showSupportInfo = false },
+            confirmButton = { Button(onClick = { showSupportInfo = false }) { Text("OK") } },
+            title = { Text("PlakatRadar unterstützen") },
+            text = { Text("Hallo, das PlakatRadar wird immer und zu jeder Zeit kostenlos bleiben. Aber wenn ihr meine Arbeit gut findet, unterstützt mich.") }
+        )
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Divider()
+        Text("App verwalten")
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Button(
+                onClick = {
+                    val supportUrl = Uri.parse("https://ko-fi.com/parteicoder")
+                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, supportUrl)) }
+                        .onFailure { Toast.makeText(context, "Ko-fi konnte nicht geöffnet werden.", Toast.LENGTH_LONG).show() }
+                },
+                modifier = Modifier.weight(1f).height(60.dp)
+            ) { Text("☕ Ko-fi") }
+            OutlinedButton(onClick = { showSupportInfo = true }, modifier = Modifier.height(60.dp)) { Text("?") }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = { openAppSettings(context) }, modifier = Modifier.weight(1f).height(60.dp)) { Text("Deinstallieren") }
+            Button(onClick = { openUpdatePage(context) }, modifier = Modifier.weight(1f).height(60.dp)) { Text("Update") }
+        }
+    }
+}"""
+        var text = mainActivity.readText()
+        text = text.replace(oldKeyboard, newKeyboard)
+        text = text.replace(oldAppManagement, newAppManagement)
+        mainActivity.writeText(text)
     }
 }
 
