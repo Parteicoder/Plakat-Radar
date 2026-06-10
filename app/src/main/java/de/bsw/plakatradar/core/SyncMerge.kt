@@ -16,14 +16,30 @@ object SyncMerge {
             it.deviceId == incoming.senderDeviceId && it.role == MemberRole.LEADER && it.approved && !it.blocked
         } || (local.role == MemberRole.LEADER && incoming.senderDeviceId == local.deviceId)
 
+        val incomingSenderApprovedByLocal = local.devices.any {
+            it.deviceId == incoming.senderDeviceId && it.approved && !it.blocked
+        } || incoming.senderDeviceId == local.deviceId
+
+        // Wenn verify() erfolgreich war, stimmen Team-ID und Team-Schlüssel.
+        // Dann darf das Paket Plakatdaten enthalten, auch wenn der Sender auf diesem Gerät
+        // noch nicht in der lokalen Geräteliste bekannt ist. Sonst verschwinden Plakate beim
+        // ersten Messenger-/Datei-Sync still im Nichts.
+        val incomingMayContainData = true
+
         val deviceMap = linkedMapOf<String, DeviceRecord>()
         local.devices.forEach { deviceMap[it.deviceId] = it }
 
         incoming.devices.forEach { incomingDevice ->
             val old = deviceMap[incomingDevice.deviceId]
             val safeIncoming = when {
+                local.role == MemberRole.LEADER && old == null && incomingDevice.deviceId == local.deviceId ->
+                    incomingDevice.copy(approved = true, blocked = false)
+
+                local.role == MemberRole.LEADER && old == null && incomingDevice.deviceId == incoming.senderDeviceId ->
+                    incomingDevice.copy(approved = true, blocked = false)
+
                 local.role == MemberRole.LEADER && old == null ->
-                    incomingDevice.copy(approved = incomingDevice.role == MemberRole.LEADER && incomingDevice.deviceId == local.deviceId)
+                    incomingDevice.copy(approved = incomingDevice.approved && !incomingDevice.blocked)
 
                 local.role == MemberRole.LEADER && old != null ->
                     incomingDevice.copy(approved = old.approved, blocked = old.blocked)
@@ -31,8 +47,11 @@ object SyncMerge {
                 incomingSenderIsKnownLeader ->
                     incomingDevice
 
+                incomingSenderApprovedByLocal ->
+                    incomingDevice
+
                 old == null ->
-                    incomingDevice.copy(approved = false)
+                    incomingDevice.copy(approved = incomingDevice.deviceId == incoming.senderDeviceId && incomingDevice.approved, blocked = incomingDevice.blocked)
 
                 else ->
                     old
@@ -45,12 +64,6 @@ object SyncMerge {
                 else -> finalOld
             }
         }
-
-        val incomingSenderApprovedByLocal = local.devices.any {
-            it.deviceId == incoming.senderDeviceId && it.approved && !it.blocked
-        } || incoming.senderDeviceId == local.deviceId
-
-        val incomingMayContainData = incomingSenderIsKnownLeader || incomingSenderApprovedByLocal
 
         val posterMap = linkedMapOf<String, Poster>()
         local.posters.forEach { posterMap[it.id] = it }
