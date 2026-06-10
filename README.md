@@ -134,6 +134,21 @@ Manche Funktionen laufen eingeschränkt, wenn Berechtigungen fehlen.
 
 Dieser Abschnitt ist bewusst einfach geschrieben. Man muss kein Profi-Entwickler sein, aber ein paar Grundprogramme braucht der PC trotzdem.
 
+### Direkte Links
+
+Hier findet man alles, was man braucht:
+
+- **Projektseite auf GitHub:** https://github.com/privatdavidgottschall-sudo/Plakat-Radar
+- **Projekt als ZIP herunterladen:** https://github.com/privatdavidgottschall-sudo/Plakat-Radar/archive/refs/heads/main.zip
+- **GitHub Actions / fertige APK-Builds:** https://github.com/privatdavidgottschall-sudo/Plakat-Radar/actions/workflows/android-debug-apk.yml
+- **Android Studio herunterladen:** https://developer.android.com/studio
+- **Java JDK 17 herunterladen:** https://adoptium.net/temurin/releases/?version=17
+- **Git herunterladen, optional:** https://git-scm.com/downloads
+- **Gradle, nur zur Info:** https://gradle.org/install/
+- **Android-Entwicklerdokumentation:** https://developer.android.com
+
+Für die meisten Menschen reicht: **Android Studio installieren und dieses Projekt als ZIP herunterladen.** Git ist nur nötig, wenn man richtig am Code mitarbeiten möchte.
+
 ### Was braucht man dafür?
 
 Für den Bau der App werden benötigt:
@@ -148,9 +163,39 @@ Für den Bau der App werden benötigt:
 
 Am einfachsten ist es, **Android Studio** zu installieren. Android Studio bringt die wichtigsten Android-Werkzeuge mit oder kann sie nachinstallieren.
 
+### Projekt herunterladen
+
+#### Einfache ZIP-Variante
+
+1. Diese Seite öffnen: https://github.com/privatdavidgottschall-sudo/Plakat-Radar
+2. Auf den grünen Button **Code** klicken.
+3. **Download ZIP** auswählen.
+4. Die ZIP-Datei entpacken.
+5. Den entpackten Ordner in Android Studio öffnen.
+
+Direktlink zum ZIP:
+
+```text
+https://github.com/privatdavidgottschall-sudo/Plakat-Radar/archive/refs/heads/main.zip
+```
+
+#### Variante mit Git, eher für Mitentwickler
+
+Wer Git installiert hat, kann das Projekt so herunterladen:
+
+```bash
+git clone https://github.com/privatdavidgottschall-sudo/Plakat-Radar.git
+```
+
+Danach in den Ordner wechseln:
+
+```bash
+cd Plakat-Radar
+```
+
 ### Einfache Variante mit Android Studio
 
-1. Android Studio installieren.
+1. Android Studio installieren: https://developer.android.com/studio
 2. Dieses Projekt herunterladen oder über Git klonen.
 3. Android Studio öffnen.
 4. **Open** anklicken und den Projektordner `Plakat-Radar` auswählen.
@@ -208,11 +253,30 @@ In diesem Projekt laden die Skripte beim ersten Start Gradle 8.10.2 herunter und
 
 Danach muss Gradle nicht jedes Mal neu geladen werden.
 
+### APK ohne eigenen PC-Build herunterladen
+
+Man muss die App nicht selbst bauen, wenn man nur testen will.
+
+1. Diese Seite öffnen: https://github.com/privatdavidgottschall-sudo/Plakat-Radar/actions/workflows/android-debug-apk.yml
+2. Den neuesten erfolgreichen Lauf anklicken.
+3. Unten bei **Artifacts** nach `PlakatRadar-debug-apk` suchen.
+4. Artefakt herunterladen.
+5. ZIP entpacken.
+6. Die enthaltene APK auf das Android-Handy übertragen.
+
+Hinweis: GitHub verlangt manchmal eine Anmeldung, um Actions-Artefakte herunterzuladen.
+
 ### Häufige Probleme
 
 #### „Java nicht gefunden“
 
 Dann fehlt wahrscheinlich das Java JDK 17 oder es ist nicht richtig eingerichtet.
+
+Direktlink für JDK 17:
+
+```text
+https://adoptium.net/temurin/releases/?version=17
+```
 
 Lösung:
 
@@ -223,6 +287,12 @@ Lösung:
 #### „Android SDK not found“
 
 Dann ist das Android SDK nicht installiert oder Android Studio findet es nicht.
+
+Direktlink für Android Studio:
+
+```text
+https://developer.android.com/studio
+```
 
 Lösung:
 
@@ -267,6 +337,12 @@ Lösung:
 - später erneut versuchen
 - in einem anderen Netzwerk testen
 
+Gradle-Infoseite:
+
+```text
+https://gradle.org/install/
+```
+
 ### Wichtig für normale Nutzer
 
 Man muss die App nicht selbst bauen, wenn man nur testen will. Dann reicht normalerweise die APK aus GitHub Actions.
@@ -307,6 +383,12 @@ Selbst bauen ist vor allem sinnvoll für:
 Der Debug-Build läuft über GitHub Actions:
 
 `Build Android APK`
+
+Direktlink:
+
+```text
+https://github.com/privatdavidgottschall-sudo/Plakat-Radar/actions/workflows/android-debug-apk.yml
+```
 
 Das Artefakt heißt:
 
