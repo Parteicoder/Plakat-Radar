@@ -12,8 +12,8 @@ android {
         applicationId = "de.bsw.plakatradar"
         minSdk = 26
         targetSdk = 35
-        versionCode = 14
-        versionName = "0.10.4-wifi-permission-fix"
+        versionCode = 15
+        versionName = "0.10.5-sync-feedback"
     }
 
     buildFeatures {
@@ -28,6 +28,8 @@ tasks.register("normalizeKeyboardCallbacks") {
         val mainActivity = file("src/main/java/de/bsw/plakatradar/MainActivity.kt")
         val oldKeyboard = "fun close" + "Keyboard() { focusManager.clearFocus(force = true) }"
         val newKeyboard = "val close" + "Keyboard: () -> Unit = { focusManager.clearFocus(force = true) }"
+        val oldImportEcho = ".onSuccess { ui = ui.copy(local = it, lastLog = \"Daten mit Teamgerät abgeglichen.\"); sync?.sendCurrentBundleToAll() }"
+        val newImportEcho = ".onSuccess { ui = ui.copy(local = it, lastLog = \"Sync erfolgreich: Daten empfangen und abgeglichen.\") }"
         val oldAppManagement = "@Composable\nfun AppManagementCard(context: Context) { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { Divider(); Text(\"App verwalten\"); Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { Button(onClick = { openAppSettings(context) }, modifier = Modifier.weight(1f).height(60.dp)) { Text(\"Deinstallieren\") }; Button(onClick = { openUpdatePage(context) }, modifier = Modifier.weight(1f).height(60.dp)) { Text(\"Update\") } } } }"
         val newAppManagement = """@Composable
 fun AppManagementCard(context: Context) {
@@ -64,6 +66,7 @@ fun AppManagementCard(context: Context) {
 }"""
         var text = mainActivity.readText()
         text = text.replace(oldKeyboard, newKeyboard)
+        text = text.replace(oldImportEcho, newImportEcho)
         text = text.replace(oldAppManagement, newAppManagement)
         mainActivity.writeText(text)
     }
