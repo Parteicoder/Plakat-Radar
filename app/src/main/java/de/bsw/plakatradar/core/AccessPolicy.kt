@@ -27,9 +27,9 @@ object AccessPolicy {
     // Offline/no-QR users may save posters locally. Sync and share still require a real team secret.
     fun canAddPoster(state: LocalTeamState): Boolean = state.role != null && !state.teamId.isNullOrBlank()
 
-    fun canSync(state: LocalTeamState): Boolean = hasTeamAccess(state)
+    fun canSync(state: LocalTeamState): Boolean = hasTeamAccess(state) && isSelfApproved(state)
 
-    fun canShareSyncBundle(state: LocalTeamState): Boolean = hasTeamAccess(state)
+    fun canShareSyncBundle(state: LocalTeamState): Boolean = hasTeamAccess(state) && isSelfApproved(state)
 
     // Stadtverwaltungs-ZIP darf jeder eingerichtete Nutzer exportieren,
     // also auch "Ohne QR-Code weiter". Dafür reicht eine lokale Rolle und Team-ID.
