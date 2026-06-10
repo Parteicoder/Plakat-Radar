@@ -34,7 +34,7 @@ Der normale Teamzugang läuft über den Teamleiter-QR-Code:
 
 ### QR-Schloss
 
-Der QR-Code kann gesperrt werden. Wenn das Schloss aktiv ist, bleibt der aktuell sichtbare QR-Code erhalten. Der gespeicherte QR bleibt auch nach dem Schließen und erneuten Öffnen der App sichtbar.
+Der QR-Code kann gesperrt werden. Wenn das Schloss aktiv ist, erzeugt die App einen langlebigen QR-Code und speichert ihn lokal. Der gespeicherte QR bleibt auch nach dem Schließen und erneuten Öffnen der App sichtbar.
 
 Wichtig: Der QR-Schloss-Modus ist für die praktische Teamarbeit gedacht. Wenn ein QR-Code bereits weitergegeben oder fotografiert wurde, sollte organisatorisch darauf geachtet werden, wer Zugriff erhält.
 
@@ -62,18 +62,19 @@ Der Ohne-QR-Modus ist kein echter Teambeitritt. Ein richtiger Teamzugang entsteh
 
 ## Was funktioniert im MVP
 
-- Plakat mit Foto, GPS, Standorttext, Typ und Notiz erfassen
+- Plakat mit Foto, GPS, automatisch erkannter Standortbeschreibung, Typ und Notiz erfassen
 - Plakatliste anzeigen
 - Kartenansicht mit OpenStreetMap/osmdroid
 - Plakate in der Nähe anzeigen
 - Status ändern, zum Beispiel hängend, geprüft, beschädigt, fehlt, ersetzt oder entfernt
+- Plakate vollständig aus der Liste entfernen
 - Abnahme-Erinnerung für fällige Plakate
 - Teamleiter-QR-Code mit Schloss-Funktion
 - Ohne-QR-Modus für eingeschränkte lokale Nutzung
 - lokaler Team-Sync in der Nähe über Nearby Connections
 - verschlüsseltes Sync-Paket über Messenger, E-Mail, Signal, WhatsApp, Telegram oder Nearby Share
 - Sync-Paket importieren
-- Behördenexport als CSV für die Stadtverwaltung
+- Behördenexport als gut lesbare CSV für die Stadtverwaltung
 - große, besser drückbare Navigation oben
 - Deinstallieren-/App-Info-Button
 - Update-Button, der zur GitHub-Actions-/APK-Seite führt
@@ -129,6 +130,154 @@ Die App kann folgende Android-Berechtigungen benötigen:
 
 Manche Funktionen laufen eingeschränkt, wenn Berechtigungen fehlen.
 
+## App auf dem PC bauen
+
+Dieser Abschnitt ist bewusst einfach geschrieben. Man muss kein Profi-Entwickler sein, aber ein paar Grundprogramme braucht der PC trotzdem.
+
+### Was braucht man dafür?
+
+Für den Bau der App werden benötigt:
+
+1. **Ein PC mit Windows, macOS oder Linux**
+2. **Internetverbindung**
+3. **Java JDK 17**
+4. **Android Studio** oder mindestens das **Android SDK**
+5. **Android SDK 35**
+6. **Android Build Tools 35.0.0**
+7. Dieses GitHub-Projekt als heruntergeladener Ordner
+
+Am einfachsten ist es, **Android Studio** zu installieren. Android Studio bringt die wichtigsten Android-Werkzeuge mit oder kann sie nachinstallieren.
+
+### Einfache Variante mit Android Studio
+
+1. Android Studio installieren.
+2. Dieses Projekt herunterladen oder über Git klonen.
+3. Android Studio öffnen.
+4. **Open** anklicken und den Projektordner `Plakat-Radar` auswählen.
+5. Warten, bis Android Studio das Projekt geladen hat.
+6. Wenn Android Studio nach fehlenden SDKs oder Lizenzen fragt, diese installieren beziehungsweise bestätigen.
+7. Oben im Menü **Build** anklicken.
+8. Dann **Build Bundle(s) / APK(s)** anklicken.
+9. Dann **Build APK(s)** auswählen.
+
+Wenn alles klappt, zeigt Android Studio am Ende einen Hinweis wie **APK generated successfully** an.
+
+Die fertige APK liegt dann ungefähr hier:
+
+```text
+app/build/outputs/apk/debug/app-debug.apk
+```
+
+Diese APK ist eine **Debug-Version**. Sie ist zum Testen gedacht, nicht als finale Play-Store-Version.
+
+### Variante über die Konsole
+
+Im Projekt liegt ein lokales Gradle-Startskript. Es lädt beim ersten Start automatisch Gradle 8.10.2 herunter und benutzt danach diese Version.
+
+#### Windows
+
+Im Projektordner eine Eingabeaufforderung oder PowerShell öffnen und ausführen:
+
+```bat
+gradlew.bat :app:assembleDebug
+```
+
+#### macOS oder Linux
+
+Im Projektordner ein Terminal öffnen und ausführen:
+
+```bash
+sh ./gradlew :app:assembleDebug
+```
+
+Wenn der Build erfolgreich ist, liegt die APK hier:
+
+```text
+app/build/outputs/apk/debug/app-debug.apk
+```
+
+### Was macht `gradlew`?
+
+`gradlew` und `gradlew.bat` sind Startskripte für Gradle. Gradle ist das Werkzeug, das aus dem Kotlin-Code eine Android-App baut.
+
+In diesem Projekt laden die Skripte beim ersten Start Gradle 8.10.2 herunter und speichern es lokal im Projektordner unter:
+
+```text
+.gradle/bootstrap/
+```
+
+Danach muss Gradle nicht jedes Mal neu geladen werden.
+
+### Häufige Probleme
+
+#### „Java nicht gefunden“
+
+Dann fehlt wahrscheinlich das Java JDK 17 oder es ist nicht richtig eingerichtet.
+
+Lösung:
+
+- JDK 17 installieren
+- danach den PC oder das Terminal neu starten
+- in Android Studio prüfen, ob JDK 17 verwendet wird
+
+#### „Android SDK not found“
+
+Dann ist das Android SDK nicht installiert oder Android Studio findet es nicht.
+
+Lösung:
+
+- Android Studio öffnen
+- SDK Manager öffnen
+- Android SDK 35 installieren
+- Android Build Tools 35.0.0 installieren
+
+#### „SDK licenses not accepted“
+
+Dann wurden die Android-Lizenzen noch nicht bestätigt.
+
+Lösung in Android Studio:
+
+- Android Studio öffnen
+- SDK Manager öffnen
+- fehlende Pakete installieren
+- Lizenzabfragen bestätigen
+
+#### „gradlew darf nicht ausgeführt werden“ auf macOS/Linux
+
+Dann fehlt eventuell die Ausführungsberechtigung. Man kann trotzdem direkt bauen mit:
+
+```bash
+sh ./gradlew :app:assembleDebug
+```
+
+Oder einmalig ausführbar machen:
+
+```bash
+chmod +x gradlew
+./gradlew :app:assembleDebug
+```
+
+#### „Download von Gradle schlägt fehl“
+
+Dann fehlt Internetzugang oder eine Firewall blockiert den Download.
+
+Lösung:
+
+- Internet prüfen
+- später erneut versuchen
+- in einem anderen Netzwerk testen
+
+### Wichtig für normale Nutzer
+
+Man muss die App nicht selbst bauen, wenn man nur testen will. Dann reicht normalerweise die APK aus GitHub Actions.
+
+Selbst bauen ist vor allem sinnvoll für:
+
+- Entwickler
+- Tester
+- Leute, die Änderungen am Code prüfen wollen
+- Community-Mitglieder, die helfen möchten
+
 ## Einschränkungen
 
 - Kein echter Internet-Live-Sync über weite Entfernung.
@@ -136,26 +285,24 @@ Manche Funktionen laufen eingeschränkt, wenn Berechtigungen fehlen.
 - OpenStreetMap-Kartenkacheln brauchen Internet, sofern sie nicht bereits gecacht sind.
 - GitHub-Actions-APKs sind Debug-/Test-Builds und keine finale Play-Store-Version.
 - Für echte Updates ohne Deinstallation ist später eine feste Release-Signatur nötig.
-- Der aktuelle Build-Workflow arbeitet mit Patch-Skripten unter `tools/`, die zur Build-Zeit UI- und Funktionskorrekturen anwenden.
+- Der Build arbeitet direkt mit dem Kotlin-Quellcode. Die früheren Python-Patch-Skripte werden nicht mehr im GitHub-Workflow ausgeführt.
 
 ## Wichtige Dateien
 
 - `app/src/main/java/de/bsw/plakatradar/MainActivity.kt`
 - `app/src/main/java/de/bsw/plakatradar/core/TeamInvite.kt`
 - `app/src/main/java/de/bsw/plakatradar/core/AccessPolicy.kt`
+- `app/src/main/java/de/bsw/plakatradar/core/OfficialExport.kt`
 - `app/src/main/java/de/bsw/plakatradar/core/SyncMerge.kt`
 - `app/src/main/java/de/bsw/plakatradar/data/LocalRepository.kt`
 - `app/src/main/java/de/bsw/plakatradar/sync/NearbySyncManager.kt`
 - `app/src/main/java/de/bsw/plakatradar/sync/SyncBundleCodec.kt`
 - `.github/workflows/android-debug-apk.yml`
-- `tools/apply_fixes.py`
-- `tools/fix_close_keyboard_scope.py`
-- `tools/persist_qr_lock.py`
-- `tools/large_top_navigation.py`
-- `tools/start_screen_bottom_left_button.py`
-- `tools/no_qr_notice.py`
+- `gradlew`
+- `gradlew.bat`
+- `gradle/wrapper/gradle-wrapper.properties`
 
-## APK-Build
+## APK-Build über GitHub
 
 Der Debug-Build läuft über GitHub Actions:
 
