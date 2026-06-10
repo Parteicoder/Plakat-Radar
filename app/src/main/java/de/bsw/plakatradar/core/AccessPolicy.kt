@@ -24,6 +24,8 @@ object AccessPolicy {
 
     fun canShowQr(state: LocalTeamState): Boolean = isLeader(state) && isSelfApproved(state)
 
+    fun canManageTeamSecurity(state: LocalTeamState): Boolean = isLeader(state) && isSelfApproved(state)
+
     // Offline/no-QR users may save posters locally. Sync and share still require a real team secret.
     fun canAddPoster(state: LocalTeamState): Boolean = state.role != null && !state.teamId.isNullOrBlank()
 
