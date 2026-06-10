@@ -12,8 +12,8 @@ android {
         applicationId = "de.bsw.plakatradar"
         minSdk = 26
         targetSdk = 35
-        versionCode = 17
-        versionName = "0.10.7-sync-import-merge-fix"
+        versionCode = 18
+        versionName = "0.10.8-authority-export-refresh-fix"
     }
 
     buildFeatures {
@@ -30,6 +30,28 @@ tasks.register("normalizeKeyboardCallbacks") {
         val newKeyboard = "val close" + "Keyboard: () -> Unit = { focusManager.clearFocus(force = true) }"
         val oldImportEcho = ".onSuccess { ui = ui.copy(local = it, lastLog = \"Daten mit Teamgerät abgeglichen.\"); sync?.sendCurrentBundleToAll() }"
         val newImportEcho = ".onSuccess { ui = ui.copy(local = it, lastLog = \"Sync erfolgreich: Daten empfangen und abgeglichen.\") }"
+        val oldExport = """    fun exportCsv(context: Context, municipality: String) {
+        runCatching {
+            val file = File(context.cacheDir, "Plakatliste_${'$'}{municipality}_${'$'}{System.currentTimeMillis()}.csv")
+            file.writeText(OfficialExport.toCsv(ui.local, municipality), Charsets.UTF_8)
+            val uri = FileProvider.getUriForFile(context, fileProviderAuthority(), file)
+            val send = Intent(Intent.ACTION_SEND).apply { type = "text/csv"; putExtra(Intent.EXTRA_STREAM, uri); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+            context.startActivity(Intent.createChooser(send, "Plakatliste teilen"))
+        }.onFailure { fail(it) }
+    }"""
+        val newExport = """    fun exportCsv(context: Context, municipality: String) {
+        runCatching {
+            val freshState = repo.load()
+            ui = ui.copy(local = freshState)
+            if (freshState.posters.isEmpty()) error("Keine Plakate für den Export vorhanden. Bitte erst Plakate erfassen oder Sync-Paket importieren.")
+            val file = File(context.cacheDir, "Plakatliste_${'$'}{municipality}_${'$'}{System.currentTimeMillis()}.csv")
+            file.writeText(OfficialExport.toCsv(freshState, municipality), Charsets.UTF_8)
+            val uri = FileProvider.getUriForFile(context, fileProviderAuthority(), file)
+            val send = Intent(Intent.ACTION_SEND).apply { type = "text/csv"; putExtra(Intent.EXTRA_STREAM, uri); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+            context.startActivity(Intent.createChooser(send, "Plakatliste teilen"))
+            ui = ui.copy(local = freshState, lastLog = "Stadtverwaltungsliste erstellt: ${'$'}{freshState.posters.size} Plakate.")
+        }.onFailure { fail(it) }
+    }"""
         val oldHelperAnchor = "}\n\ndata class AppUiState("
         val newHelperAnchor = """}
 
@@ -113,6 +135,7 @@ fun AppManagementCard(context: Context) {
         var text = mainActivity.readText()
         text = text.replace(oldKeyboard, newKeyboard)
         text = text.replace(oldImportEcho, newImportEcho)
+        text = text.replace(oldExport, newExport)
         if (!text.contains("plakatRadarIncomingSyncUri")) text = text.replace(oldHelperAnchor, newHelperAnchor)
         text = text.replace(oldPlakatRadarApp, newPlakatRadarApp)
         text = text.replace(oldAppManagement, newAppManagement)
