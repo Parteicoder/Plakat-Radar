@@ -12,8 +12,13 @@ android {
         applicationId = "de.bsw.plakatradar"
         minSdk = 26
         targetSdk = 35
-        versionCode = 26
-        versionName = "0.10.16-build-normalizer-fix"
+        versionCode = 27
+        versionName = "0.10.17-jvm-target-fix"
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     buildFeatures {
@@ -23,6 +28,10 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.15"
     }
+}
+
+kotlin {
+    jvmToolchain(17)
 }
 
 tasks.register("normalizeKeyboardCallbacks") {
