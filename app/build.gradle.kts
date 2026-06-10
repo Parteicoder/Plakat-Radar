@@ -12,8 +12,8 @@ android {
         applicationId = "de.bsw.plakatradar"
         minSdk = 26
         targetSdk = 35
-        versionCode = 32
-        versionName = "0.12.2-repo-cleanup-tests"
+        versionCode = 33
+        versionName = "0.12.3-repo-clean-root"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
