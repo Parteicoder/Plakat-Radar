@@ -12,8 +12,8 @@ android {
         applicationId = "de.bsw.plakatradar"
         minSdk = 26
         targetSdk = 35
-        versionCode = 21
-        versionName = "0.10.11-authority-export-for-members"
+        versionCode = 22
+        versionName = "0.10.12-authority-export-for-qr-members"
     }
 
     buildFeatures {
