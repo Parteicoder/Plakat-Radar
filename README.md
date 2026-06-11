@@ -42,10 +42,10 @@ Hier sind die wichtigsten Links gesammelt, damit man nicht suchen muss:
 - Ohne-QR-Modus fuer lokale Erfassung und Stadtverwaltungs-Export
 - moderne Dashboard-Navigation mit Start, Erfassen, Liste, Karte und Mehr
 
-## Geplante Features
+## Geplante Erweiterungen
 
-- Weg-Tracking beim Flyerverteilen: Die App soll spaeter aufzeichnen koennen, welche Strassen beziehungsweise Strassenabschnitte bereits abgelaufen wurden. So kann das Team sehen, wo schon Flyer verteilt wurden und wo noch Luecken sind.
-- Schrittzaehler fuer Flyerverteilung: Ergaenzend zum Weg-Tracking soll ein Schrittzaehler helfen, die gelaufene Strecke beziehungsweise den Einsatz beim Flyern besser einzuschaetzen.
+- Gebiets- und Wege-Tracking fuer Ausseneinsaetze: Die App soll spaeter sichtbar machen, welche Strassen, Wege oder Gebiete bereits bearbeitet wurden. Das kann zum Beispiel beim Flyerverteilen, bei Kontrollgaengen oder bei anderen lokalen Wahlkampfaktionen helfen.
+- Aktivitaetszaehler fuer Einsaetze: Ergaenzend zum Wege-Tracking ist ein optionaler Schritt- oder Streckenzaehler geplant, damit Teams Einsaetze besser einschaetzen und dokumentieren koennen.
 
 ## Ohne-QR-Modus
 
