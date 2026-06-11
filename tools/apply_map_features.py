@@ -2,6 +2,46 @@ from pathlib import Path
 
 p = Path("app/src/main/java/de/bsw/plakatradar/MainActivity.kt")
 s = p.read_text(encoding="utf-8")
+
+# Remove the unfinished Google/online service entry from the visible app UI.
+# The app still keeps local sync and encrypted sync packages, but users no longer see
+# a placeholder switch for a feature that is not implemented yet.
+s = s.replace(
+    '        item { if (hasTeamQr) GoogleServicePlaceholderCard(vm) else LockedTeamButton("Google-Service nutzen", vm) }\n',
+    ''
+)
+s = s.replace(
+    '''@Composable
+fun GoogleServicePlaceholderCard(vm: PlakatRadarViewModel) {
+    var checked by remember { mutableStateOf(false) }
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Google-Service-Sync", style = MaterialTheme.typography.titleMedium)
+            Text("Vorgesehen für eine spätere Online-Teilen-Funktion. Aktuell noch nicht aktiv.")
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("Google-Service nutzen")
+                Switch(checked = checked, onCheckedChange = { wantsOn -> if (wantsOn) { checked = false; vm.showGoogleServiceNotImplemented() } })
+            }
+            Text("Der Schalter geht wieder aus, bis der Dienst implementiert ist.")
+        }
+    }
+}
+
+''',
+    ''
+)
+s = s.replace(
+    '''    fun showGoogleServiceNotImplemented() {
+        ui = ui.copy(
+            lastLog = "Google-Service-Sync ist vorgesehen, aber noch nicht implementiert.",
+            error = "Google-Service-Sync ist vorgesehen, aber noch nicht implementiert. Aktuell bitte lokalen Sync oder verschlüsselte Messenger-Sync-Pakete nutzen."
+        )
+    }
+
+''',
+    ''
+)
+
 start = s.index("@Composable\nfun PosterMapScreen")
 end = s.index("fun statusMarkerDrawable", start)
 replacement = r'''@Composable
@@ -96,4 +136,4 @@ fun addPoliticalPoiMarkers(context: Context, map: MapView) {
 
 '''
 p.write_text(s[:start] + replacement + s[end:], encoding="utf-8")
-print("Map features applied")
+print("Map features applied; unfinished online sync UI hidden")
