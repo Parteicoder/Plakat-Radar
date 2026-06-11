@@ -30,10 +30,8 @@ jobs:
       - name: Install Android SDK packages
         run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
-      - name: Apply map behavior updates
-        run: |
-          python3 tools/apply_map_location_button.py
-          python3 tools/apply_political_poi_markers.py
+      - name: Apply map POI markers
+        run: python3 tools/apply_map_features.py
 
       - name: Run unit tests
         run: sh ./gradlew :app:testDebugUnitTest --stacktrace
