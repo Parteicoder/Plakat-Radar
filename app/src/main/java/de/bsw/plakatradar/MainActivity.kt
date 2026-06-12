@@ -171,8 +171,7 @@ class PlakatRadarViewModel(app: Application) : AndroidViewModel(app) {
     fun exportAuthorityZip(context: Context, municipality: String) {
         runCatching {
             if (!AccessPolicy.canExportForAuthority(ui.local)) error("Bitte zuerst Team erstellen, QR scannen oder ohne QR starten.")
-            val cleanName = municipality.ifBlank { "Kommune" }.replace(Regex("[^A-Za-z0-9ÄÖÜäöüß_-]"), "_")
-            val file = File(context.cacheDir, "PlakatRadar_Verwaltung_${cleanName}_${System.currentTimeMillis()}.zip")
+            val file = File(context.cacheDir, ExportNames.authorityZipName(municipality))
             OfficialExport.writeZip(
                 state = ui.local,
                 municipality = municipality.ifBlank { "Kommune" },
@@ -339,9 +338,10 @@ fun MoreScreen(vm: PlakatRadarViewModel, onNavigate: (String) -> Unit) {
     val s = vm.ui.local
     val scanner = rememberLauncherForActivityResult(ScanContract()) { result -> result.contents?.let { vm.joinByQr(it, s.deviceName.ifBlank { "Teammitglied" }) } }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) vm.importSyncBundle(uri) }
+    val exportName = s.teamName ?: "Kommune"
     LazyColumn(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Text("Mehr", style = MaterialTheme.typography.headlineMedium) }
-        item { ActionCard("Verwaltungs-Export", "ZIP mit plakatliste.csv und Fotos erstellen.", "ZIP teilen", AccessPolicy.canExportForAuthority(s)) { vm.exportAuthorityZip(context, "Eilenburg") } }
+        item { ActionCard("Verwaltungs-Export", "ZIP mit plakatliste.csv und Fotos erstellen.", "Export für Verwaltung", AccessPolicy.canExportForAuthority(s)) { vm.exportAuthorityZip(context, exportName) } }
         item { ActionCard("Sync-Paket teilen", "Verschlüsseltes Paket für Teamgeräte teilen.", "Teilen", AccessPolicy.canShareSyncBundle(s)) { vm.shareSyncBundle(context) } }
         item { ActionCard("Sync-Paket importieren", "Erhaltenes Paket auswählen.", "Importieren", AccessPolicy.canSync(s)) { importLauncher.launch(arrayOf("application/octet-stream", "application/zip", "*/*")) } }
         if (!AccessPolicy.hasTeamAccess(s)) item { ActionCard("Teamleiter-QR scannen", "Aktiviert Team-Sync und Teamfunktionen.", "QR scannen") { scanner.launch(ScanOptions().setPrompt("Teamleiter-QR scannen").setBeepEnabled(false)) } }
