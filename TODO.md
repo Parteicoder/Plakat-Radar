@@ -38,7 +38,7 @@ Diese Liste sammelt die nächsten Baustellen. Immer nur kleine Schritte bauen un
 
 - [ ] Prüfen, ob alte entfernte Plakate wirklich nicht mehr im normalen Export stören.
 - [ ] Interne Notizen klar vom Verwaltungs-Export trennen.
-- [ ] Export-Dateinamen sauber halten.
+- [x] Export-Dateinamen sauber halten.
 - [ ] Keine versteckten Cloud-Funktionen einbauen.
 - [x] Keine Python- oder Build-Zeit-Patches mehr verwenden.
 
