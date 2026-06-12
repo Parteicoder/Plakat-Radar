@@ -7,9 +7,9 @@ import org.junit.Test
 class ExportNamesTest {
     @Test
     fun authorityZipNameUsesReadablePrefixAndZipExtension() {
-        val name = ExportNames.authorityZipName("Eilenburg", nowMillis = 1_704_067_200_000L)
+        val name = ExportNames.authorityZipName("Musterstadt", nowMillis = 1_704_067_200_000L)
 
-        assertTrue(name.startsWith("PlakatRadar_Verwaltung_Eilenburg_"))
+        assertTrue(name.startsWith("PlakatRadar_Verwaltung_Musterstadt_"))
         assertTrue(name.endsWith(".zip"))
         assertFalse(name.contains("1704067200000"))
     }
