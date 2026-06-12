@@ -40,7 +40,7 @@ Diese Liste sammelt die nächsten Baustellen. Immer nur kleine Schritte bauen un
 - [ ] Interne Notizen klar vom Verwaltungs-Export trennen.
 - [ ] Export-Dateinamen sauber halten.
 - [ ] Keine versteckten Cloud-Funktionen einbauen.
-- [ ] Keine Python- oder Build-Zeit-Patches mehr verwenden.
+- [x] Keine Python- oder Build-Zeit-Patches mehr verwenden.
 
 ## Später
 
